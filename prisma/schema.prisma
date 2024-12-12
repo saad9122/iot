@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"  // Change this from "mysql" to "postgresql"
+  url      = env("DATABASE_URL")  // Ensure this points to the correct PostgreSQL connection URL
 }
 
 model Role {
@@ -30,119 +30,7 @@ model User {
   updatedAt DateTime  @updatedAt
   role      Role      @relation(fields: [roleId], references: [id])
   roleId    Int
-  customers Customer[]
-  products  Product[]
-  invoices  Invoice[]
 
   @@map("users")
 }
 
-
-model RegionType {
- id              Int           @id @default(autoincrement())
- name            String        @db.VarChar(100)
- tax             Decimal       @db.Decimal(5,2)
- isDeleted       Boolean       @default(false)
- createdAt       DateTime      @default(now())
- updatedAt       DateTime      @updatedAt
- customers       Customer[]
-}
-
-model Customer {  
-  id              Int           @id @default(autoincrement())
-  name            String        @db.VarChar(100)
-  company         String        @db.VarChar(200)
-  shopNumber      String        @db.VarChar(50)
-  taxNumber       String?       @db.VarChar(50)
-  address         String        @db.VarChar(200)
-  street          String        @db.VarChar(100)
-  phoneNumber     String        @db.VarChar(15)
-  postalCode      String?       @db.VarChar(15)
-  landlineNumber  String?       @db.VarChar(15)
-  country         String        @db.VarChar(100)
-  city            String        @db.VarChar(100)
-  regionType      RegionType    @relation(fields: [regionTypeId], references: [id])
-  regionTypeId    Int
-  note            String?       @db.Text
-  isDeleted       Boolean       @default(false)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  user            User          @relation(fields: [createdBy], references: [id])
-  createdBy       Int
-  invoices        Invoice[]
-
-  @@map("customers")
-}
-
-model Product {
-  id                      String            @id @default(uuid()) @db.Char(21)
-  name                    String            @unique @db.VarChar(200)
-  retailPrice             Decimal           @db.Decimal(10, 2)
-  salePrice               Decimal           @db.Decimal(10, 2)
-  articleNumber           String?           @db.VarChar(50)
-  supplierName            String?           @db.VarChar(100)
-  supplierArticleNumber   String?           @db.VarChar(50)
-  isDeleted               Boolean           @default(false)
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt
-  user                    User              @relation(fields: [createdBy], references: [id]) 
-  createdBy               Int
-  invoiceProducts         InvoiceProduct[]
-
-  @@map("products")
-}
-
-enum InvoiceType {
-  Invoice
-  Return
-}
-model Invoice {
-  id               String            @id @default(uuid()) @db.Char(21)
-  invoiceDate      DateTime
-  address          String            @db.VarChar(200) 
-  discount         Decimal           @db.Decimal(5, 2)
-  tax              Decimal           @db.Decimal(10, 2)
-  netTotal         Decimal           @db.Decimal(10, 2) //Amount without tax and discount
-  grossTotal       Decimal           @db.Decimal(10, 2) //Amount with tax and
-  shipment         Decimal           @db.Decimal(10, 2)
-  description      String?           @db.Text
-  type             InvoiceType
-  isDeleted        Boolean           @default(false)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  customer         Customer          @relation(fields: [customerId], references: [id])
-  customerId       Int
-  user             User              @relation(fields: [createdBy], references: [id])
-  createdBy        Int
-  paymentMethod    PaymentMethod     @relation(fields: [paymentMethodId], references: [id])
-  paymentMethodId  Int
-  invoiceProducts  InvoiceProduct[]
-
-  @@map("invoices")
-}
-
-model InvoiceProduct {
-  id        Int      @id @default(autoincrement())
-  price     Decimal  @db.Decimal(10, 2)
-  quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
-  invoiceId String
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String
-
-  @@map("invoice_products")
-}
-
-model PaymentMethod {
-  id        Int       @id @default(autoincrement())
-  name      String    @db.VarChar(100)
-  isDeleted Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  invoices  Invoice[]
-
-  @@map("payment_methods")
-}
-  

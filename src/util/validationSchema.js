@@ -41,38 +41,6 @@ export const newInvoiceProductSchema = Yup.object().shape({
   ),
 });
 
-export const InvoiceFormSchema = Yup.object().shape({
-  customerId: Yup.string().required('Customer is required'),
-  date: Yup.string().required('Date is required'),
-  paymentMethodId: Yup.string().required('Payment Method is required'),
-  discount: decimalValidation('discount  must have at most two decimal places', 2)
-    .min(0, 'Discount must be non-negative')
-    .max(100, 'Discount must be 100 or less')
-    .nullable(),
-  shipment: decimalValidation('shipment  must have at most two decimal places', 2)
-    .min(0, 'Shipment cost must be non-negative')
-    .nullable(),
-  type: Yup.string().oneOf(Object.values(InvoiceType), 'Invalid invoice type').required('Invoice type is required'),
-  description: Yup.string().optional(),
-  newInvoiceProduct: newInvoiceProductSchema,
-  invoiceProducts: Yup.array()
-    .of(Yup.mixed().required('Items are required.'))
-    .min(1, 'At least one product is required'),
-});
-
-export const addProductFormSchema = Yup.object().shape({
-  name: Yup.string().required('Product Name is required'),
-  salePrice: decimalValidation('Price must have at most two decimal places', 2)
-    .min(0.01, 'Price must be greater than zero')
-    .required('sale Price is required'),
-  retailPrice: decimalValidation('Price must have at most two decimal places', 2)
-    .min(0.01, 'Price must be greater than zero')
-    .required('retailPrice is required'),
-  articleNumber: Yup.string().max(50, 'Article number is too long').nullable(),
-  supplierName: Yup.string().max(100, 'Supplier name  is too long').nullable(),
-  supplierArticleNumber: Yup.string().max(50, 'Supplier article number is too long').nullable(),
-});
-
 export const usersFormSchema = Yup.object().shape({
   userName: Yup.string()
     .min(3, 'Username must be at least 3 characters')

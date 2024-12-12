@@ -25,7 +25,7 @@ let latestSensorData: ILatestSensorData = {
 
 const SensorDataSchema = z
   .object({
-    temperature: z.number().min(-100).max(200),
+    temperature: z.number().min(-200).max(200),
     voltage: z.number().min(0).max(1000),
     current: z.number().min(0).max(1000),
     power: z.number().min(0).max(100000),
@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      console.log('inside');
       return NextResponse.json(
         {
           message: 'Invalid content type',
@@ -50,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     // Parse raw body text
     const body = await request.text();
-    console.log('Raw incoming data:', body);
 
     let data;
     try {
@@ -112,6 +110,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  console.log(latestSensorData, 'dataaaa');
   return NextResponse.json(latestSensorData);
 }

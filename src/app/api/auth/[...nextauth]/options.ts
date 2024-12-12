@@ -1,28 +1,8 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NextAuthOptions } from 'next-auth';
 import { IUserInfo, IUserSignin } from '@/app/_types/interfaces';
-import { generateResponse } from '@/util/utilityFunctions.ts';
 import db from '@/db/db';
 import { matchPassowrd } from '@/app/_actions/auth';
-
-async function dummyLogin(): Promise<IUserInfo> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        success: true,
-        message: 'login successful',
-        data: {
-          firstName: 'saad',
-          lastName: 'don',
-          role: 'admin',
-          dob: new Date(),
-          gender: 'male',
-          token: 'somerandomshit',
-        },
-      });
-    }, 1000); // Simulating a delay of 1 second
-  });
-}
 
 export const options: NextAuthOptions = {
   providers: [
@@ -56,6 +36,7 @@ export const options: NextAuthOptions = {
               },
             },
           });
+          console.log(userInDB,'userInDB')
 
           if (userInDB && credentials?.userName === userInDB?.userName) {
             const isPassword: boolean = await matchPassowrd(credentials?.password, userInDB?.password);
@@ -70,7 +51,8 @@ export const options: NextAuthOptions = {
           }
           return null;
         } catch (error: any) {
-          return generateResponse(false, error.message);
+          console.log(error.message)
+          throw new Error(error.message)
         }
       },
     }),
