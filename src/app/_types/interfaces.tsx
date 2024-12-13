@@ -1,4 +1,3 @@
-import { Product, Customer } from '@prisma/client';
 
 export interface IResponse {
   success: boolean;
@@ -23,14 +22,6 @@ export interface IUserSignin {
 
 export interface IUserInfo extends IResponse {
   data: IUserSignin;
-}
-
-export interface IProductsResponse extends IResponse {
-  data: Product[];
-}
-
-export interface ICustomersResponse extends IResponse {
-  data: Customer[];
 }
 
 export interface ICustomer {

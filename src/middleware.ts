@@ -22,7 +22,9 @@ export default async function middleware(req: NextRequestWithAuth) {
   }
 
   // Role-based access control
-  const userRole = token?.user?.role;
+
+  // @ts-ignore
+  const userRole = token?.user?.role
 
   // Define role-based access rules
   const roleRules = {

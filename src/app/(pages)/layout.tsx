@@ -1,5 +1,4 @@
 import Navbar from '../_components/navigation/Navbar';
-import Sidebar from '../_components/navigation/Sidebar';
 import { SidebarProvider } from '../_context/SidebarContext';
 
 export default function MainLayout({

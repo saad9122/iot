@@ -1,5 +1,4 @@
 import {
-  addProductFormSchema,
   changePasswordFormSchema,
   customerFormSchema,
   usersFormSchema,
@@ -10,8 +9,6 @@ import * as Yup from 'yup';
 export type ExtendedColumnDef<T> = ColumnDef<T> & {
   className?: string;
 };
-
-export type AddProductFormValues = Yup.InferType<typeof addProductFormSchema>;
 
 export type CustomerFormValues = Yup.InferType<typeof customerFormSchema>;
 
