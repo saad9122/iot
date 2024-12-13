@@ -34,7 +34,9 @@ export default async function middleware(req: NextRequestWithAuth) {
   };
 
   // Check if the user has permission to access the current path
+  // @ts-ignore
   const path = req.nextUrl.pathname;
+  // @ts-ignore
   if (roleRules[path] && !roleRules[path].includes(userRole)) {
     return NextResponse.redirect(new URL('/unauthorized', req.url));
   }
