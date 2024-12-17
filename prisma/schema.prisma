@@ -14,8 +14,8 @@ model Role {
   id        Int      @id @default(autoincrement())
   name      String   @unique @db.VarChar(100)
   isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   users     User[]
 
   @@map("roles")
@@ -26,11 +26,42 @@ model User {
   userName  String    @unique @db.VarChar(100)
   password  String    @db.VarChar(255)
   isDeleted Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  role      Role      @relation(fields: [roleId], references: [id])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId    Int
 
   @@map("users")
 }
 
+model Device {
+  id                    Int               @id @default(autoincrement())
+  name                  String            @db.VarChar(255) @map("device_name")
+  macAddress            String            @unique @db.VarChar(255) @map("device_identifier")
+  location              String?           @db.VarChar(255)
+  description           String?           @db.Text
+  setTemperature        Float?            @map("set_temperature")
+  reverseRelay          Boolean           @default(false) @map("reverse_relay") 
+  createdAt DateTime    @default(now())   @map("created_at")
+  updatedAt DateTime    @updatedAt        @map("updated_at")
+  lastActivityAt        DateTime?         @map("last_activity_at")
+
+  sensorReadings    SensorReading[]
+
+  @@map("devices")
+}
+
+model SensorReading {
+  id                  BigInt    @id @default(autoincrement())
+  deviceId            Int       @map("device_id")
+  device              Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  temperature         Float
+  voltage             Float?
+  current             Float?
+  power               Float?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  
+  @@map("sensor_readings")
+}

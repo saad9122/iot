@@ -99,3 +99,50 @@ export const changePasswordFormSchema = Yup.object().shape({
     .required('Admin Password is required'),
   adminPassword: Yup.string().required('New Password is required'),
 });
+
+export const deviceSchema = Yup.object({
+  name: Yup.string().required('Device name is required'),
+  macAddress: Yup.string()
+    .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address format')
+    .required('MAC address is required'),
+  location: Yup.string().optional(),
+  description: Yup.string().optional(),
+  setTemperature: Yup.number().optional(),
+  reverseRelay: Yup.boolean().default(false),
+});
+
+export const sensorDataSchema = Yup.object({
+  macAddress: Yup.string()
+    .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address format')
+    .required('MAC address is required'),
+
+  temperature: Yup.number()
+    .required('Temperature is required')
+    .min(-100, 'Temperature cannot be lower than -100°C')
+    .max(200, 'Temperature cannot exceed 200°C'),
+
+  voltage: Yup.number()
+    .nullable()
+    .typeError('Voltage must be a number or null')
+    .min(0, 'Voltage cannot be negative')
+    .max(1000, 'Voltage cannot exceed 1000'),
+
+  current: Yup.number()
+    .nullable()
+    .typeError('Current must be a number or null')
+    .min(0, 'Current cannot be negative')
+    .max(1000, 'Current cannot exceed 1000'),
+
+  temperatureThreshold: Yup.number()
+    .required('Temperature threshold is required')
+    .min(-100, 'Temperature threshold cannot be lower than -100°C')
+    .max(200, 'Temperature threshold cannot exceed 200°C'),
+
+  power: Yup.object({
+    realPower: Yup.number().required('Real Power is required').min(0, 'Real Power cannot be negative'),
+  })
+    .required('Power object is required')
+    .nullable(),
+  temperatureThreshold: Yup.number().optional(),
+  relayState: Yup.boolean().required('Relay state is required').typeError('Relay state must be a boolean'),
+});
