@@ -1,6 +1,8 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import DeviceCard from './_components/DeviceCard';
 
 // Helper function to check device activity
 function isDeviceActive(lastActivityAt: string | null): boolean {
@@ -28,11 +30,11 @@ export default function DevicesPage() {
     } catch (error) {
       console.error('Error fetching devices:', error);
     } finally {
-      setLoading(false); // Set loading to false only once
+      setLoading(false);
     }
   }
 
-  // Fetch devices on component mount and every 5 seconds
+  // Fetch devices on component mount and every 10 seconds
   useEffect(() => {
     fetchDevices(); // Initial fetch
 
@@ -41,30 +43,37 @@ export default function DevicesPage() {
     return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, []);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Devices</h1>
+  // Skeleton loader for devices
+  const DeviceSkeleton = () => (
+    <div>
+      <Skeleton className="h-6 w-3/4 mb-2" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-10 w-10 rounded-full" />
+      <Skeleton className="h-5 w-20" />
+    </div>
+  );
 
-      {/* Show loading only for the first render */}
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">My Devices</h1>
+        <Badge variant="secondary">Total: {devices.length}</Badge>
+      </div>
+
       {loading && devices.length === 0 ? (
-        <p>Loading devices...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, index) => (
+            <DeviceSkeleton key={index} />
+          ))}
+        </div>
       ) : devices.length === 0 ? (
-        <p>No devices available.</p>
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <p className="text-xl text-gray-600">No devices available.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {devices.map((device) => (
-            <div
-              key={device.id}
-              className="border rounded-lg p-4 shadow-lg bg-white hover:shadow-2xl transition-shadow"
-            >
-              <h2 className="text-xl font-semibold mb-2">{device.name}</h2>
-              <p className="text-gray-600 mb-1">
-                <strong>Location:</strong> {device.location || 'Not Specified'}
-              </p>
-              <p className={`font-medium ${isDeviceActive(device.lastActivityAt) ? 'text-green-600' : 'text-red-600'}`}>
-                {isDeviceActive(device.lastActivityAt) ? 'Active' : 'Inactive'}
-              </p>
-            </div>
+            <DeviceCard key={device.id} device={device} isDeviceActive={isDeviceActive} />
           ))}
         </div>
       )}
