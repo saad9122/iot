@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Find the device by MAC address
     const device = await db.device.findUnique({
-      where: { macAddress: validatedData.macAddress },
+      where: { id: validatedData.macAddress },
     });
 
     if (!device) {
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Write the sensor reading to the database
     const updatedReading = await db.sensorReading.create({
       data: {
-        deviceId: Number(device.id),
+        deviceId: device.id,
         temperature: validatedData.temperature,
         voltage: validatedData.voltage,
         current: validatedData.current,

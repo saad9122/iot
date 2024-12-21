@@ -35,33 +35,34 @@ model User {
 }
 
 model Device {
-  id                    Int               @id @default(autoincrement())
+  id                    String            @id @db.VarChar(255)
   name                  String            @db.VarChar(255) @map("device_name")
-  macAddress            String            @unique @db.VarChar(255) @map("device_identifier")
   location              String?           @db.VarChar(255)
   description           String?           @db.Text
   setTemperature        Float?            @map("set_temperature")
   reverseRelay          Boolean           @default(false) @map("reverse_relay") 
-  createdAt DateTime    @default(now())   @map("created_at")
-  updatedAt DateTime    @updatedAt        @map("updated_at")
+  wifiName              String?           @db.VarChar(255) @map("wifi_name")
+  wifiPassword          String?           @db.VarChar(255) @map("wifi_password")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
   lastActivityAt        DateTime?         @map("last_activity_at")
 
-  sensorReadings    SensorReading[]
+  sensorReadings        SensorReading[]
 
   @@map("devices")
 }
 
 model SensorReading {
   id                  BigInt    @id @default(autoincrement())
-  deviceId            Int       @map("device_id")
+  deviceId            String    @map("device_id")
   device              Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   temperature         Float
   voltage             Float?
   current             Float?
   power               Float?
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
   
   @@map("sensor_readings")
 }

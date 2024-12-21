@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Check if the MAC address already exists
     const existingDevice = await db.device.findUnique({
-      where: { macAddress: validatedData.macAddress },
+      where: { id: validatedData.macAddress },
     });
 
     if (existingDevice) {
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const newDevice = await db.device.create({
       data: {
         name: validatedData.name,
-        macAddress: validatedData.macAddress,
+        id: validatedData.macAddress,
         location: validatedData.location,
         description: validatedData.description,
         setTemperature: validatedData.setTemperature,

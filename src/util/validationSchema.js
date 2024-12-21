@@ -112,10 +112,6 @@ export const deviceSchema = Yup.object({
 });
 
 export const sensorDataSchema = Yup.object({
-  macAddress: Yup.string()
-    .matches(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address format')
-    .required('MAC address is required'),
-
   temperature: Yup.number()
     .required('Temperature is required')
     .min(-100, 'Temperature cannot be lower than -100°C')
@@ -139,7 +135,7 @@ export const sensorDataSchema = Yup.object({
     .max(200, 'Temperature threshold cannot exceed 200°C'),
 
   power: Yup.object({
-    realPower: Yup.number().required('Real Power is required').min(0, 'Real Power cannot be negative'),
+    Power: Yup.number().required('Real Power is required').min(0, 'Real Power cannot be negative'),
   })
     .required('Power object is required')
     .nullable(),

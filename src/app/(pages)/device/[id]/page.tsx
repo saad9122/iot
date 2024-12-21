@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ interface SensorData {
   lastUpdated: Date;
 }
 
-export default function SensorDashboard() {
+export default function SensorDashboard({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [sensorData, setSensorData] = useState<SensorData>({
     temperature: 0,
     voltage: 0,
@@ -29,10 +31,14 @@ export default function SensorDashboard() {
   const [threshold, setThreshold] = useState(25.0);
 
   useEffect(() => {
+    if (!id) return; // Ensure `id` is available
+
     const fetchSensorData = async () => {
       try {
-        console.log('use effect');
-        const response = await fetch('/api/sensors');
+        const response = await fetch(`/api/sensors/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch sensor data');
+        }
         const data = await response.json();
         setSensorData(data);
       } catch (error) {
@@ -44,11 +50,13 @@ export default function SensorDashboard() {
     fetchSensorData();
     const intervalId = setInterval(fetchSensorData, 5000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [id]);
 
   const handleThresholdChange = async () => {
+    if (!id) return;
+
     try {
-      await fetch('/api/sensors', {
+      await fetch(`/api/sensors/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
