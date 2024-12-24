@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
     // Validate the data using Yup
     const validatedData = await deviceSchema.validate(body, { abortEarly: false });
 
-    console.log(validatedData, 'validated Data');
-
     // Check if the MAC address already exists
     const existingDevice = await db.device.findUnique({
       where: { id: validatedData.macAddress },
@@ -70,7 +68,7 @@ export async function POST(request: NextRequest) {
         message: 'Device registered successfully.',
         device: newDevice,
       },
-      { status: 201 }, // Created
+      { status: 201 },
     );
   } catch (error) {
     console.error('Error creating device:', error);

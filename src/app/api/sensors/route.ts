@@ -30,11 +30,15 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       return NextResponse.json(
-        { message: 'Invalid content type', error: 'Expected application/json' },
+        {
+          message: 'Invalid content type',
+          error: 'Expected application/json',
+        },
         { status: 400 },
       );
     }
 
+    // Parse raw body text
     const body = await request.text();
 
     let data;
@@ -42,64 +46,57 @@ export async function POST(request: NextRequest) {
       data = JSON.parse(body);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      return NextResponse.json({ message: 'Invalid JSON', error: parseError.message }, { status: 400 });
-    }
-
-    // Validate incoming data using Yup schema
-    let validatedData;
-    try {
-      validatedData = await sensorDataSchema.validate(data, { abortEarly: false });
-    } catch (validationError) {
-      console.error('Data validation error:', validationError);
       return NextResponse.json(
         {
-          message: 'Invalid sensor data',
-          error: validationError.errors || 'Unknown validation error',
+          message: 'Invalid JSON',
+          error: String(parseError),
         },
         { status: 400 },
       );
     }
 
-    // Find the device by MAC address
-    const device = await db.device.findUnique({
-      where: { id: validatedData.macAddress },
-    });
+    // Validate data with more lenient schema
+    try {
+      const validatedData = SensorDataSchema.parse(data);
 
-    if (!device) {
+      latestSensorData = {
+        temperature: validatedData.temperature ?? 0, // Provide default values for missing properties
+        voltage: validatedData.voltage ?? 0,
+        current: validatedData.current ?? 0,
+        power: validatedData.power ?? 0,
+        relayState: validatedData.relayState ?? false,
+        temperatureThreshold: validatedData.temperatureThreshold ?? 0,
+        lastUpdated: new Date(),
+      };
+
+      // Store or process validated data
+
       return NextResponse.json(
-        { message: 'Device not found', error: 'No device found with the given MAC address' },
-        { status: 404 },
+        {
+          message: 'Sensor data received successfully',
+          data: validatedData,
+        },
+        { status: 200 },
+      );
+    } catch (validationError) {
+      console.error('Data validation error:', validationError);
+      return NextResponse.json(
+        {
+          message: 'Invalid sensor data',
+          error: validationError instanceof z.ZodError ? validationError.errors : 'Unknown validation error',
+        },
+        { status: 400 },
       );
     }
-
-    // Write the sensor reading to the database
-    const updatedReading = await db.sensorReading.create({
-      data: {
-        deviceId: device.id,
-        temperature: validatedData.temperature,
-        voltage: validatedData.voltage,
-        current: validatedData.current,
-        power: validatedData.power?.realPower,
-      },
-    });
-
-    // Update the device's last activity timestamp and mark it as active
-    await db.device.update({
-      where: { id: device.id },
-      data: {
-        lastActivityAt: new Date(), // Update last activity time
-      },
-    });
-
-    return NextResponse.json(
-      {
-        message: 'Sensor data processed successfully',
-      },
-      { status: 200 },
-    );
   } catch (error) {
     console.error('Unexpected error in POST handler:', error);
-    return NextResponse.json({ message: 'Server error processing sensor data', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        message: 'Server error processing sensor data',
+        error: String(error),
+      },
+      { status: 500 },
+    );
   }
 }
 
