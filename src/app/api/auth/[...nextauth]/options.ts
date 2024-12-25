@@ -36,7 +36,7 @@ export const options: NextAuthOptions = {
               },
             },
           });
-          console.log(userInDB,'userInDB')
+          console.log(userInDB, 'userInDB');
 
           if (userInDB && credentials?.userName === userInDB?.userName) {
             const isPassword: boolean = await matchPassowrd(credentials?.password, userInDB?.password);
@@ -51,8 +51,8 @@ export const options: NextAuthOptions = {
           }
           return null;
         } catch (error: any) {
-          console.log(error.message)
-          throw new Error(error.message)
+          console.log(error.message);
+          throw new Error(error.message);
         }
       },
     }),

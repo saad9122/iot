@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Thermometer, Bolt, ZapOff, Clock } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 interface SensorData {
   temperature: number;
@@ -15,6 +16,8 @@ interface SensorData {
   temperatureThreshold: number;
   lastUpdated: Date;
 }
+
+const SOCKET_URL = process.env.SOCKET_APP_URL;
 
 export default function SensorDashboard({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -30,26 +33,24 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
 
   const [threshold, setThreshold] = useState(25.0);
 
+  console.log(SOCKET_URL, 'SOCKET_URL');
+
   useEffect(() => {
     if (!id) return; // Ensure `id` is available
 
-    const fetchSensorData = async () => {
-      try {
-        const response = await fetch(`/api/sensors/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch sensor data');
-        }
-        const data = await response.json();
-        setSensorData(data);
-      } catch (error) {
-        console.error('Failed to fetch sensor data', error);
-      }
-    };
+    const socket = io('http://localhost:5000');
 
-    // Fetch immediately and then every 5 seconds
-    fetchSensorData();
-    const intervalId = setInterval(fetchSensorData, 5000);
-    return () => clearInterval(intervalId);
+    socket.on('sensorData', (data) => {
+      console.log(data, 'dataaaa');
+      if (data.id === id) {
+        setSensorData(data);
+      }
+    });
+
+    // Cleanup the WebSocket connection on unmount
+    return () => {
+      socket.disconnect();
+    };
   }, [id]);
 
   const handleThresholdChange = async () => {
