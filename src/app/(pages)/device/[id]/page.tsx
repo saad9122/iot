@@ -5,9 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Thermometer, Bolt, ZapOff, Clock, WifiOff } from 'lucide-react';
+import { ApiResponse } from '@/util/utilityFunctions';
+import { Device } from '@prisma/client';
+import { optionGenerator } from '@/app/_actions/auth';
+import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Info, Thermometer, Bolt, ZapOff, Clock, WifiOff, Activity, Loader2, AlertCircle } from 'lucide-react';
+import TemperatureMonitoringCard from '../_components/TemperatureMonitoringCard';
+import PowerMetric from '../_components/PowerMetric';
+import DeviceInformation from '../_components/DeviceInformation';
+import DeviceAlert from '../_components/DeviceAlert';
+import NoDataDisplay from '../_components/NoDataDisplay';
+import DeviceDataLoading from '../_components/DeviceDataLoading';
+import DeviceLoading from '../_components/DeviceLoading';
 
-interface SensorData {
+export interface SensorData {
   temperature: number;
   voltage: number;
   current: number;
@@ -18,36 +30,64 @@ interface SensorData {
   device_id?: string;
 }
 
+const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function SensorDashboard({ params }: { params: { id: string } }) {
+  const { toast } = useToast();
   const { id } = params;
   const decodedId = id ? decodeURIComponent(id) : '';
   const TIMEOUT_THRESHOLD = 15000; // 15 seconds in milliseconds
 
-  const [sensorData, setSensorData] = useState<SensorData>({
-    temperature: 0,
-    voltage: 0,
-    current: 0,
-    power: { Power: 0 },
-    relayState: false,
-    temperatureThreshold: 25.0,
-    lastUpdated: new Date(),
-  });
-
+  const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [threshold, setThreshold] = useState(25.0);
   const [isConnected, setIsConnected] = useState(false);
   const [isDeviceActive, setIsDeviceActive] = useState(true);
+  const [device, setDevice] = useState<Device | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasInitialData, setHasInitialData] = useState(false);
 
-  // Check device timeout
+  useEffect(() => {
+    const fetchDeviceInfo = async () => {
+      try {
+        const requestOptions = await optionGenerator({ method: 'GET' });
+        const response = await fetch(`${baseApiUrl}/api/devices/${decodedId}`, requestOptions);
+        const data: ApiResponse<Device> = await response.json();
+
+        if (!data.data || !data?.success) {
+          throw new Error(data?.message);
+        }
+
+        setDevice(data.data);
+      } catch (error) {
+        console.error('Error fetching device info:', error);
+        toast({
+          title: 'Error fetching device info',
+          description: (error as Error).message,
+          variant: 'destructive',
+        });
+      }
+    };
+
+    fetchDeviceInfo();
+  }, [decodedId]);
+
   useEffect(() => {
     const checkDeviceTimeout = () => {
+      if (!sensorData) return;
       const now = new Date().getTime();
       const lastUpdate = new Date(sensorData.lastUpdated).getTime();
-      setIsDeviceActive(now - lastUpdate < TIMEOUT_THRESHOLD);
+      const isActive = now - lastUpdate < TIMEOUT_THRESHOLD;
+      setIsDeviceActive(isActive);
+
+      // Clear sensor data if device is inactive
+      // if (!isActive && sensorData) {
+      //   setSensorData(null);
+      // }
     };
 
     const interval = setInterval(checkDeviceTimeout, 1000);
     return () => clearInterval(interval);
-  }, [sensorData.lastUpdated]);
+  }, [sensorData?.lastUpdated]);
 
   useEffect(() => {
     if (!decodedId) return;
@@ -76,139 +116,81 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
         if (data.temperatureThreshold !== threshold) {
           setThreshold(data.temperatureThreshold);
         }
+        if (!hasInitialData) {
+          setHasInitialData(true);
+          const now = new Date().getTime();
+          const lastUpdate = new Date(data.lastUpdated).getTime();
+          const isActive = now - lastUpdate < TIMEOUT_THRESHOLD;
+          setIsDeviceActive(isActive);
+          setIsLoading(false);
+        }
       }
     });
 
+    // Set a timeout for initial data load
+    const initialDataTimeout = setTimeout(() => {
+      if (!hasInitialData) {
+        setIsLoading(false);
+      }
+    }, 5000); // Wait 5 seconds for initial data
+
     return () => {
+      clearTimeout(initialDataTimeout);
       socket.emit('unsubscribeFromDevice', decodedId);
       socket.disconnect();
     };
   }, [decodedId]);
 
-  const handleThresholdChange = async () => {
-    if (!decodedId) return;
+  if (isLoading && !device) return <DeviceDataLoading />;
 
-    try {
-      const response = await fetch(`/api/sensors/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ temperatureThreshold: threshold }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update threshold');
-    } catch (error) {
-      console.error('Failed to update threshold:', error);
-    }
-  };
-
-  const getTemperatureColor = (temp: number) => {
-    if (temp >= threshold) return 'text-red-500';
-    if (temp >= threshold - 5) return 'text-orange-500';
-    return 'text-green-500';
-  };
+  // if (!device) return <DeviceLoading />;
 
   return (
-    <div className="p-8 space-y-8 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Device Monitor: {decodedId}</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className={`h-3 w-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-gray-600">
-                  {isConnected ? 'Server Connected' : 'Server Disconnected'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`h-3 w-3 rounded-full ${isDeviceActive ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                <span className="text-sm text-gray-600">{isDeviceActive ? 'Device Active' : 'Device Timeout'}</span>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-8">
+        {/* Header Section with Gradient Background */}
+        <div className="mb-8 p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Device Monitoring Dashboard
+              </h1>
+              <p className="mt-2 text-gray-600">Real-time device metrics and status monitoring</p>
+            </div>
+            <div className="flex gap-4">
+              {/* <Badge variant={isConnected ? 'success' : 'destructive'} className="h-8 px-4 flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </Badge> */}
+              <Badge variant={isDeviceActive ? 'success' : 'destructive'} className="h-8 px-4 flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                {isDeviceActive ? 'Active' : 'Inactive'}
+              </Badge>
             </div>
           </div>
         </div>
 
-        {!isDeviceActive && (
-          <Alert className="mb-6 border-yellow-200 bg-yellow-50">
-            <WifiOff className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-700">
-              Device hasn't reported data in the last 15 seconds. Please check the connection.
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Alerts */}
+        {!isDeviceActive && <DeviceAlert />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="shadow-lg border border-gray-200 rounded-xl bg-white transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="p-6 border-b border-gray-100">
-              <CardTitle className="flex items-center text-2xl font-semibold text-gray-700">
-                <Thermometer className="mr-3 text-red-500" /> Temperature Monitor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="text-center md:text-left">
-                  <span className={`text-5xl md:text-6xl font-bold ${getTemperatureColor(sensorData.temperature)}`}>
-                    {sensorData.temperature.toFixed(1)}°C
-                  </span>
-                  <p className="text-sm text-gray-500 mt-3">
-                    Last updated: {new Date(sensorData.lastUpdated).toLocaleTimeString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-gray-600 text-sm">Temperature Threshold</span>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={threshold}
-                        onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                        className="w-24"
-                        step="0.1"
-                      />
-                      <Button onClick={handleThresholdChange} className="bg-blue-500 hover:bg-blue-600">
-                        Update
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Device Information Card */}
+          {device && <DeviceInformation device={device} />}
 
-          <Card className="shadow-lg border border-gray-200 rounded-xl bg-white transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="p-6 border-b border-gray-100">
-              <CardTitle className="flex items-center text-2xl font-semibold text-gray-700">
-                <Bolt className="mr-3 text-yellow-500" /> Power Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center text-gray-700">
-                      <ZapOff className="mr-2 text-blue-500" />
-                      <span className="font-medium">Voltage:</span>
-                      <span className="ml-2 text-lg">{sensorData.voltage.toFixed(2)} V</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center text-gray-700">
-                      <Bolt className="mr-2 text-green-500" />
-                      <span className="font-medium">Current:</span>
-                      <span className="ml-2 text-lg">{sensorData.current.toFixed(2)} A</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center text-gray-700">
-                    <Clock className="mr-2 text-orange-500" />
-                    <span className="font-medium">Power:</span>
-                    <span className="ml-2 text-lg">{sensorData.power.Power.toFixed(2)} W</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Temperature Monitor Card */}
+
+          {sensorData && isDeviceActive ? (
+            <TemperatureMonitoringCard sensorData={sensorData} decodedId={decodedId} />
+          ) : (
+            <NoDataDisplay
+              title="No Temperature Data Available"
+              message="Waiting for device to report new temperature readings..."
+            />
+          )}
+
+          {/* Power Metrics Card */}
+          {sensorData && <PowerMetric sensorData={sensorData} />}
         </div>
       </div>
     </div>
