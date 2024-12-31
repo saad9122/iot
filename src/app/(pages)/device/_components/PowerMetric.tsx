@@ -38,7 +38,7 @@ const PowerMetric = ({ sensorData }: { sensorData: SensorData }) => {
                 <Clock className="w-5 h-5 text-orange-500 mr-2" />
                 <span className="font-medium text-gray-700">Power</span>
               </div>
-              <span className="text-2xl font-semibold text-gray-900">{sensorData?.power.Power.toFixed(2)} W</span>
+              <span className="text-2xl font-semibold text-gray-900">{sensorData?.power.toFixed(2)} W</span>
             </div>
           </div>
         </div>

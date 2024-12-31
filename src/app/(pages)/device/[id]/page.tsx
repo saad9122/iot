@@ -10,24 +10,23 @@ import { Device } from '@prisma/client';
 import { optionGenerator } from '@/app/_actions/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Info, Thermometer, Bolt, ZapOff, Clock, WifiOff, Activity, Loader2, AlertCircle } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import TemperatureMonitoringCard from '../_components/TemperatureMonitoringCard';
 import PowerMetric from '../_components/PowerMetric';
 import DeviceInformation from '../_components/DeviceInformation';
 import DeviceAlert from '../_components/DeviceAlert';
 import NoDataDisplay from '../_components/NoDataDisplay';
 import DeviceDataLoading from '../_components/DeviceDataLoading';
-import DeviceLoading from '../_components/DeviceLoading';
 
 export interface SensorData {
   temperature: number;
   voltage: number;
   current: number;
-  power: { Power: number };
+  power: number;
   relayState: boolean;
   temperatureThreshold: number;
   lastUpdated: Date;
-  device_id?: string;
+  deviceId?: string;
 }
 
 const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -36,12 +35,12 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   const { toast } = useToast();
   const { id } = params;
   const decodedId = id ? decodeURIComponent(id) : '';
-  const TIMEOUT_THRESHOLD = 15000; // 15 seconds in milliseconds
+  const TIMEOUT_THRESHOLD = 15000;
 
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [threshold, setThreshold] = useState(25.0);
   const [isConnected, setIsConnected] = useState(false);
-  const [isDeviceActive, setIsDeviceActive] = useState(true);
+  const [isDeviceActive, setIsDeviceActive] = useState();
   const [device, setDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialData, setHasInitialData] = useState(false);
@@ -108,7 +107,8 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
     });
 
     socket.on('sensorData', (data) => {
-      if (data.device_id === decodedId) {
+      console.log(data, 'dataaaaa');
+      if (data.deviceId === decodedId) {
         setSensorData({
           ...data,
           lastUpdated: new Date(),
