@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useToast } from '@/components/ui/use-toast';
 import { Edit3, Wifi, MapPin, Info, XCircle, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Device } from '@prisma/client';
 
 export interface SensorData {
   temperature: number;
@@ -28,7 +29,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   const { id } = params;
   const decodedId = id ? decodeURIComponent(id) : '';
 
-  const [device, setDevice] = useState<any | null>(null);
+  const [device, setDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editedDevice, setEditedDevice] = useState({
@@ -78,11 +79,8 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
       });
       const data = await response.json();
 
-      if (data.success) {
-        setDevice((prev) => ({
-          ...prev,
-          ...editedDevice,
-        }));
+      if (data.success && data.data) {
+        setDevice(data?.data);
         toast({
           title: 'Success',
           description: 'Device information updated successfully.',
@@ -111,8 +109,8 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
     );
   }
 
-  const deviceStatus = device?.lastUpdated
-    ? new Date().getTime() - new Date(device.lastUpdated).getTime() < 300000
+  const deviceStatus = device?.lastActivityAt
+    ? new Date().getTime() - new Date(device.lastActivityAt).getTime() < 300000
       ? 'online'
       : 'offline'
     : 'unknown';
@@ -181,11 +179,13 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
                 </div>
                 <p className="text-lg font-semibold text-gray-800">{device?.description || 'N/A'}</p>
               </div>
-              {device?.lastUpdated && (
+              {device?.lastActivityAt && (
                 <div className="md:col-span-2">
                   <Alert>
                     <Clock className="w-4 h-4" />
-                    <AlertDescription>Last updated: {new Date(device.lastUpdated).toLocaleString()}</AlertDescription>
+                    <AlertDescription>
+                      Last updated: {new Date(device?.lastActivityAt).toLocaleString()}
+                    </AlertDescription>
                   </Alert>
                 </div>
               )}

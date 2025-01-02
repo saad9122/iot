@@ -43,7 +43,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [threshold, setThreshold] = useState(25.0);
   const [isConnected, setIsConnected] = useState(false);
-  const [isDeviceActive, setIsDeviceActive] = useState();
+  const [isDeviceActive, setIsDeviceActive] = useState(false);
   const [device, setDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialData, setHasInitialData] = useState(false);
