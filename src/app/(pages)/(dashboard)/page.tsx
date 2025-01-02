@@ -19,9 +19,11 @@ interface Device {
     temperatureThreshold: number;
   };
 }
+const backendUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
 
 // Helper function to check device activity
 function isDeviceActive(lastActivityAt: string | null): boolean {
+  console.log(backendUrl, 'backendurll');
   if (!lastActivityAt) return false;
   const lastActivityTime = new Date(lastActivityAt);
   const currentTime = new Date();
@@ -34,7 +36,7 @@ export default function DevicesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socket = io(backendUrl);
 
     // Function to fetch devices from the API
     async function fetchDevices() {

@@ -23,6 +23,7 @@ export interface SensorData {
   voltage: number;
   current: number;
   power: number;
+  reverseRelay: boolean;
   relayState: boolean;
   temperatureThreshold: number;
   lastUpdated: Date;
@@ -30,6 +31,8 @@ export interface SensorData {
 }
 
 const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const backendUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
 
 export default function SensorDashboard({ params }: { params: { id: string } }) {
   const { toast } = useToast();
@@ -40,7 +43,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [threshold, setThreshold] = useState(25.0);
   const [isConnected, setIsConnected] = useState(false);
-  const [isDeviceActive, setIsDeviceActive] = useState();
+  const [isDeviceActive, setIsDeviceActive] = useState(false);
   const [device, setDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialData, setHasInitialData] = useState(false);
@@ -49,7 +52,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
     const fetchDeviceInfo = async () => {
       try {
         const requestOptions = await optionGenerator({ method: 'GET' });
-        const response = await fetch(`${baseApiUrl}/api/devices/${decodedId}`, requestOptions);
+        const response = await fetch(`/api/devices/${decodedId}`, requestOptions);
         const data: ApiResponse<Device> = await response.json();
 
         if (!data.data || !data?.success) {
@@ -91,7 +94,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   useEffect(() => {
     if (!decodedId) return;
 
-    const socket = io('http://localhost:5000', {
+    const socket = io(backendUrl, {
       reconnectionDelay: 1000,
       reconnection: true,
       reconnectionAttempts: 10,

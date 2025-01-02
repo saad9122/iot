@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data = JSON.parse(body);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      return NextResponse.json({ message: 'Invalid JSON', error: parseError.message }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid JSON', error: (parseError as any).message }, { status: 400 });
     }
 
     let validatedData;
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json(
         {
           message: 'Invalid sensor data',
-          error: validationError.errors || 'Unknown validation error',
+          error: (validationError as any).errors || 'Unknown validation error',
         },
         { status: 400 },
       );
@@ -63,7 +63,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     );
   } catch (error) {
     console.error('Unexpected error in POST handler:', error);
-    return NextResponse.json({ message: 'Server error processing sensor data', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Server error processing sensor data', error: (error as any).message },
+      { status: 500 },
+    );
   }
 }
 
@@ -109,6 +112,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     );
   } catch (error) {
     console.error('Unexpected error in GET handler:', error);
-    return NextResponse.json({ message: 'Server error retrieving sensor data', error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Server error retrieving sensor data', error: (error as any).message },
+      { status: 500 },
+    );
   }
 }
