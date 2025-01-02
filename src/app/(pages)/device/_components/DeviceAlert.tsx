@@ -10,7 +10,7 @@ const DeviceAlert = () => {
         <div>
           <span className="font-medium">No Recent Data Available</span>
           <p className="mt-1 text-sm text-gray-600">
-            The device hasn't reported any data in the last 15 seconds. Previous data has been hidden to prevent
+            The device hasn&apos;t reported any data in the last 15 seconds. Previous data has been hidden to prevent
             displaying outdated information.
           </p>
         </div>

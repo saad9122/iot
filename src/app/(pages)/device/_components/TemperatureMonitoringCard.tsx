@@ -5,19 +5,24 @@ import React, { useState, useEffect } from 'react';
 import { SensorData } from '../[id]/page';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
+import { Switch } from '@/components/ui/switch';
 
-const bakcendUrl = process.env.NEXT_APP_BACKEND_URL;
+const backendUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
 
 const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: SensorData; decodedId: string }) => {
   const [threshold, setThreshold] = useState(25.0);
+  const [reverseRelay, setReverseRelay] = useState(false);
   const { toast } = useToast();
 
-  // Initialize threshold from sensor data when component mounts
+  // Initialize threshold and reverse relay state from sensor data
   useEffect(() => {
     if (sensorData.temperatureThreshold) {
       setThreshold(sensorData.temperatureThreshold);
     }
-  }, [sensorData.temperatureThreshold]);
+    if (typeof sensorData.reverseRelay === 'boolean') {
+      setReverseRelay(sensorData.reverseRelay);
+    }
+  }, [sensorData]);
 
   const getTemperatureColor = (temp: number) => {
     if (temp >= threshold) return 'text-red-400';
@@ -29,8 +34,7 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
     if (!decodedId) return;
 
     try {
-      // Send update to backend
-      const response = await fetch(`http://localhost:5000/threshold`, {
+      const response = await fetch(`${backendUrl}/threshold`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,7 +61,6 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
         variant: 'destructive',
       });
 
-      // Revert threshold on error
       setThreshold(sensorData.temperatureThreshold || 25.0);
     }
   };
@@ -70,7 +73,42 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
     handleThresholdChange(value[0]);
   };
 
-  const min = 15;
+  const handleRelaySwitchChange = async (value: boolean) => {
+    if (!decodedId) return;
+
+    try {
+      const response = await fetch(`${backendUrl}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deviceId: decodedId,
+          reverseRelay: value,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update reverse relay state');
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: 'Success',
+        description: 'Reverse relay state updated successfully',
+      });
+
+      setReverseRelay(value);
+    } catch (error) {
+      console.error('Failed to update reverse relay state:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update reverse relay state',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const min = 5;
   const max = 35;
 
   return (
@@ -96,7 +134,7 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
             </div>
           </div>
 
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center space-y-6">
             <div className="space-y-4">
               <label className="block text-sm font-medium text-gray-700">Temperature Threshold</label>
               <div className="relative">
@@ -115,6 +153,14 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
                 <div className="mt-4 flex items-center justify-center">
                   <span className="text-gray-700 font-medium text-lg">{threshold.toFixed(1)}°C</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">Heat & Cool</label>
+              <div className="flex items-center">
+                <Switch checked={reverseRelay} onCheckedChange={handleRelaySwitchChange} className="ml-2" />
+                <span className="ml-3 text-gray-700 font-medium">{reverseRelay ? 'Enabled' : 'Disabled'}</span>
               </div>
             </div>
           </div>
