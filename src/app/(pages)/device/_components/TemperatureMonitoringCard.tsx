@@ -34,7 +34,7 @@ const TemperatureMonitoringCard = ({ sensorData, decodedId }: { sensorData: Sens
     if (!decodedId) return;
 
     try {
-      const response = await fetch(`${backendUrl}/threshold`, {
+      const response = await fetch(`${backendUrl}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
