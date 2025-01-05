@@ -22,8 +22,6 @@ export interface SensorData {
   deviceId?: string;
 }
 
-const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export default function SensorDashboard({ params }: { params: { id: string } }) {
   const { toast } = useToast();
   const { id } = params;
@@ -41,7 +39,7 @@ export default function SensorDashboard({ params }: { params: { id: string } }) 
   useEffect(() => {
     const fetchDeviceInfo = async () => {
       try {
-        const response = await fetch(`${baseApiUrl}/api/devices/${decodedId}`);
+        const response = await fetch(`/api/devices/${decodedId}`);
         const data = await response.json();
 
         if (data.success) {

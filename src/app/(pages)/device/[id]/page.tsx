@@ -30,8 +30,6 @@ export interface SensorData {
   deviceId?: string;
 }
 
-const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 const backendUrl = process.env.NEXT_PUBLIC_API_BACKEND_URL;
 
 export default function SensorDashboard({ params }: { params: { id: string } }) {
